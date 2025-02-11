@@ -16,6 +16,8 @@ jobs:
 
       - name: Add upstream and fetch changes
         run: |
+          git config --global user.email "nhlanhla@wallety.cash"
+          git config --global user.name "Nhlanhla Malaza"
           git remote add upstream https://github.com/omoinjm/njmtech-mail-engine.git
           git fetch upstream
 
