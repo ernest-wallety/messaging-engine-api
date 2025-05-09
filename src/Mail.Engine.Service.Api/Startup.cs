@@ -6,12 +6,15 @@ using Mail.Engine.Service.Application.Configuration;
 using Mail.Engine.Service.Application.Handlers;
 using Mail.Engine.Service.Core.Repositories;
 using Mail.Engine.Service.Core.Services;
-using Mail.Engine.Service.Core.Services.InboundMail;
-using Mail.Engine.Service.Core.Services.OutboundMail;
+using Mail.Engine.Service.Core.Services.Mail;
+using Mail.Engine.Service.Core.Services.Mail.InboundMail;
+using Mail.Engine.Service.Core.Services.Mail.OutboundMail;
+using Mail.Engine.Service.Core.Services.Wati;
 using Mail.Engine.Service.Infrastructure.Repositories;
 using Mail.Engine.Service.Infrastructure.Services;
 using Mail.Engine.Service.Infrastructure.Services.InboundMail;
 using Mail.Engine.Service.Infrastructure.Services.OutboundMail;
+using Mail.Engine.Service.Infrastructure.Services.Wati;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
@@ -21,20 +24,19 @@ namespace Mail.Engine.Service.Api
 {
     public class Startup(IConfiguration configuration, IWebHostEnvironment env)
     {
-        public IConfiguration Configuration = configuration;
-        private IWebHostEnvironment _env = env;
+        private readonly IConfiguration _configuration = configuration;
+        private readonly IWebHostEnvironment _env = env;
 
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddCors(options => options.AddPolicy("ApiCorsPolicy", builder =>
             {
                 builder.AllowAnyOrigin()
-                        .AllowAnyMethod()
-                        .AllowAnyHeader();
+                    .AllowAnyMethod()
+                    .AllowAnyHeader();
             }));
 
             services.AddControllers();
-
             services.AddApiVersioning();
             services.AddHealthChecks();
 
@@ -65,14 +67,17 @@ namespace Mail.Engine.Service.Api
 
             // Common Interfaces
             services.AddScoped<IMailRepository, MailRepository>();
+            services.AddScoped<IWatiRepository, WatiRepository>();
 
             // Component Interfaces
             services.AddScoped<ISqlSelector>(provider =>
             {
                 var configuration = provider.GetRequiredService<IConfiguration>();
-                return new SqlSelector(
-                    configuration.GetConnectionString("PGSQL_CONNECTION_STRING")!
-                );
+
+                var conString = Environment.GetEnvironmentVariable("PGSQL_CONNECTION_STRING")
+                    ?? configuration.GetConnectionString("PGSQL_CONNECTION_STRING");
+
+                return new SqlSelector(conString!);
             });
 
             // Inbound Mail Service
@@ -93,16 +98,10 @@ namespace Mail.Engine.Service.Api
             services.AddScoped<IEmailBuilder, EmailBuilder>();
             services.AddScoped<ISmtpClientFactory, SmtpClientFactory>();
 
+            // Wati Service
+            services.AddScoped<IWatiService, WatiService>();
 
-            if (_env.IsProduction())
-            {
-                services.AddSingleton<IConfigurationService, ConfigurationService>();
-            }
-
-            if (_env.IsDevelopment())
-            {
-                services.AddSingleton<IConfigurationService, ConfigurationService>();
-            }
+            services.AddSingleton<IConfigurationService, ConfigurationService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

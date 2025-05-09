@@ -11,7 +11,8 @@ ON CONFLICT (code) DO NOTHING;
 INSERT INTO mail.message_log_type (code, name)
 VALUES
     ('E', 'Email'),
-    ('S', 'SMS')
+    ('S', 'SMS'),
+    ('W', 'Wati')
 ON CONFLICT (code) DO NOTHING;
 
 -- Insert Message Log Header
@@ -48,4 +49,4 @@ VALUES
     </table>',
     (SELECT id FROM mail.message_log_type WHERE code = 'E'),
     (SELECT id FROM mail.message_log_status WHERE code = 'P'),
-    (SELECT id FROM mail.smtp_configuration WHERE code = 'SNE'));
+    (SELECT id FROM mail.smtp_configuration WHERE code = 'DEF'));
